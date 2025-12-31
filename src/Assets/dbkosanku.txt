@@ -1,0 +1,115 @@
+-- Database KosanKu
+-- Buat database baru
+CREATE DATABASE kosanku;
+USE kosanku;
+
+-- Tabel untuk menyimpan data pemilik kos
+CREATE TABLE pemilik (
+    id_pemilik INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(100) NOT NULL,
+    nama VARCHAR(100) NOT NULL,
+    no_telepon VARCHAR(15),
+    email VARCHAR(100),
+    alamat TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabel untuk menyimpan data kamar
+CREATE TABLE kamar (
+    id_kamar INT PRIMARY KEY AUTO_INCREMENT,
+    no_kamar VARCHAR(10) NOT NULL,
+    lantai INT NOT NULL,
+    ukuran_kamar VARCHAR(50),
+    fasilitas TEXT,
+    harga_sewa DECIMAL(12,2) NOT NULL,
+    status_kamar ENUM('tersedia', 'disewa', 'maintenance') DEFAULT 'tersedia',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabel untuk menyimpan data penyewa
+CREATE TABLE penyewa (
+    id_penyewa INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(100) NOT NULL,
+    nama VARCHAR(100) NOT NULL,
+    no_telepon VARCHAR(15),
+    email VARCHAR(100),
+    alamat TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabel untuk menyimpan data kontrak sewa
+CREATE TABLE kontrak_sewa (
+    id_kontrak INT PRIMARY KEY AUTO_INCREMENT,
+    id_penyewa INT,
+    id_kamar INT,
+    tanggal_mulai DATE NOT NULL,
+    tanggal_berakhir DATE NOT NULL,
+    harga_sewa DECIMAL(12,2) NOT NULL,
+    status_sewa ENUM('perbulan', 'pertahun') NOT NULL,
+    status_kontrak ENUM('aktif', 'selesai', 'dibatalkan') DEFAULT 'aktif',
+    tenggat_pembayaran DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_penyewa) REFERENCES penyewa(id_penyewa) ON DELETE CASCADE,
+    FOREIGN KEY (id_kamar) REFERENCES kamar(id_kamar) ON DELETE CASCADE
+);
+
+-- Tabel untuk menyimpan konfirmasi pembayaran
+CREATE TABLE pembayaran (
+    id_pembayaran INT PRIMARY KEY AUTO_INCREMENT,
+    id_kontrak INT,
+    tanggal_transfer DATE NOT NULL,
+    jumlah_transfer DECIMAL(12,2) NOT NULL,
+    catatan TEXT,
+    status_konfirmasi ENUM('pending', 'dikonfirmasi', 'ditolak') DEFAULT 'pending',
+    tanggal_konfirmasi TIMESTAMP NULL,
+    catatan_pemilik TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_kontrak) REFERENCES kontrak_sewa(id_kontrak) ON DELETE CASCADE
+);
+
+-- Tabel untuk menyimpan laporan kerusakan
+CREATE TABLE laporan_kerusakan (
+    id_laporan INT PRIMARY KEY AUTO_INCREMENT,
+    id_kontrak INT,
+    tanggal_laporan DATE NOT NULL,
+    deskripsi_masalah TEXT NOT NULL,
+    status_laporan ENUM('pending', 'dalam_penanganan', 'selesai') DEFAULT 'pending',
+    tanggapan_pemilik TEXT,
+    tanggal_tanggapan TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_kontrak) REFERENCES kontrak_sewa(id_kontrak) ON DELETE CASCADE
+);
+
+-- Insert data sample untuk testing
+-- Data pemilik kos
+INSERT INTO pemilik (username, password, nama, no_telepon, email, alamat) VALUES
+('admin', 'admin123', 'Budi Santoso', '081234567890', 'budi@kosanku.com', 'Jl. Merdeka No. 123, Bandung');
+
+-- Data kamar
+INSERT INTO kamar (no_kamar, lantai, ukuran_kamar, fasilitas, harga_sewa, status_kamar) VALUES
+('101', 1, '3x4 meter', 'AC, Kasur, Lemari, Meja Belajar, Kamar Mandi Dalam', 1500000.00, 'disewa'),
+('102', 1, '3x4 meter', 'AC, Kasur, Lemari, Meja Belajar, Kamar Mandi Dalam', 1500000.00, 'tersedia'),
+('201', 2, '3x3 meter', 'Kipas Angin, Kasur, Lemari, Kamar Mandi Luar', 1200000.00, 'tersedia'),
+('202', 2, '3x3 meter', 'Kipas Angin, Kasur, Lemari, Kamar Mandi Luar', 1200000.00, 'disewa');
+
+-- Data penyewa
+INSERT INTO penyewa (username, password, nama, no_telepon, email, alamat) VALUES
+('user1', 'password123', 'Andi Wijaya', '082345678901', 'andi@email.com', 'Jl. Sudirman No. 45, Jakarta'),
+('user2', 'password456', 'Sari Indah', '083456789012', 'sari@email.com', 'Jl. Gatot Subroto No. 67, Bandung');
+
+-- Data kontrak sewa
+INSERT INTO kontrak_sewa (id_penyewa, id_kamar, tanggal_mulai, tanggal_berakhir, harga_sewa, status_sewa, tenggat_pembayaran) VALUES
+(1, 1, '2025-01-01', '2025-12-31', 1500000.00, 'perbulan', '2025-07-01'),
+(2, 4, '2025-02-01', '2026-01-31', 1200000.00, 'perbulan', '2025-07-01');
+
+-- Data pembayaran sample
+INSERT INTO pembayaran (id_kontrak, tanggal_transfer, jumlah_transfer, catatan, status_konfirmasi) VALUES
+(1, '2025-06-01', 1500000.00, 'Pembayaran sewa bulan Juni 2025', 'dikonfirmasi'),
+(2, '2025-06-02', 1200000.00, 'Pembayaran sewa bulan Juni 2025', 'pending');
+
+-- Data laporan kerusakan sample
+INSERT INTO laporan_kerusakan (id_kontrak, tanggal_laporan, deskripsi_masalah, status_laporan, tanggapan_pemilik) VALUES
+(1, '2025-05-15', 'AC tidak dingin, mungkin perlu service', 'selesai', 'Sudah diperbaiki oleh teknisi pada tanggal 16 Mei 2025'),
+(2, '2025-05-20', 'Keran air kamar mandi bocor', 'dalam_penanganan', 'Sedang dalam proses perbaikan');
